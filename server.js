@@ -13,15 +13,43 @@ const uri = 'mongodb+srv://vivienlugagne:dMNRUknH7h6dbEPz@cluster0.svm08.mongodb
 
 const options = {};
 
+let HandyMan = require('./model/handyman');
+let seedData = require('./seedData');
+
 mongoose.connect(uri, options)
     .then(() => {
             console.log("Connecté à la base MongoDB dans le cloud !");
             console.log("at URI = " + uri);
             console.log("vérifiez with http://localhost:8010/api/handymans que cela fonctionne")
+
+            seedDatabase();
         },
         err => {
             console.log('Erreur de connexion: ', err);
         });
+
+// Fonction de seed
+function seedDatabase() {
+    HandyMan.countDocuments({})
+        .then(count => {
+            if (count === 0) {
+                // Si la collection est vide, insérer les données de seed
+                HandyMan.insertMany(seedData)
+                    .then(() => {
+                        console.log("Seed data inséré avec succès.");
+                    })
+                    .catch(err => {
+                        console.error("Erreur lors de l'insertion du seed data :", err);
+                    });
+            } else {
+                console.log("La base contient déjà des données (count =", count, "). Aucun seed n'est nécessaire.");
+            }
+        })
+        .catch(err => {
+            console.error("Erreur lors du comptage des documents :", err);
+        });
+}
+
 
 // Pour accepter les connexions cross-domain (CORS)
 app.use(function (req, res, next) {
@@ -30,6 +58,7 @@ app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     next();
 });
+
 
 // Pour les formulaires
 app.use(bodyParser.urlencoded({extended: true}));
